@@ -9,18 +9,42 @@ services:
     restart: always
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url                          'http://gitlab.example.com:10080'
+        external_url                          'https://gitlab.example.com:10443'
+        nginx['ssl_certificate']              = '/certs/cert.pem'
+        nginx['ssl_certificate_key']          = '/certs/key.pem'
         gitlab_rails['gitlab_shell_ssh_port'] = 10022
         gitlab_rails['time_zone']             = 'Asia/Tokyo'
     ports:
-      - '10080:10080'
+      - '10443:10443'
       - '10022:22'
     volumes:
       - 'gitlab-data:/var/opt/gitlab'
       - 'gitlab-config:/etc/gitlab'
       - 'gitlab-log:/var/log/gitlab'
+      - 'gitlab-certs:/certs'
+    depends_on:
+      - certs
+  ########################################
+  # certs
+  #   プライベート認証局の証明書とそれで署名したサーバ証明書を作成するコンテナ
+  ########################################
+  certs:
+    image: paulczar/omgwtfssl
+    restart: "no"
+    environment:
+      - CA_SUBJECT=test-ca              # CN of CA (Certification Authority)
+      - CA_EXPIRE=60
+      - SSL_SUBJECT=gitlab.example.com  # CN (Common Name)
+      - SSL_DNS=gitlab.example.com      # SAN (Subject Alternative Name)
+      - SSL_EXPIRE=60
+    volumes:
+      - 'gitlab-certs:/certs'
+    # docker-compose --profile once up オプションを指定しない限り起動しない
+    profiles:
+      - once
 
 volumes:
   gitlab-data:
   gitlab-config:
   gitlab-log:
+  gitlab-certs:
