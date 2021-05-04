@@ -12,6 +12,12 @@ services:
         external_url                          'https://gitlab.example.com:10443/gitlab/'
         nginx['ssl_certificate']              = '/certs/cert.pem'
         nginx['ssl_certificate_key']          = '/certs/key.pem'
+        nginx['custom_gitlab_server_config']  = "
+          location /kroki/ {
+            proxy_cache off;
+            proxy_pass  http://kroki:8000/;
+          }
+        "
         gitlab_rails['gitlab_shell_ssh_port'] = 10022
         gitlab_rails['time_zone']             = 'Asia/Tokyo'
     ports:
@@ -24,6 +30,11 @@ services:
       - 'gitlab-certs:/certs'
     depends_on:
       - certs
+      - kroki
+    extra_hosts:
+      # GitLab の kroki 連携の為に必要
+      # GitLab が http://gitlab.example.com/kroki/ でアクセスしたときに名前解決できないと連携できない
+      - 'gitlab.example.com:127.0.0.1'
   ########################################
   # certs
   #   プライベート認証局の証明書とそれで署名したサーバ証明書を作成するコンテナ
@@ -42,6 +53,39 @@ services:
     # docker-compose --profile once up オプションを指定しない限り起動しない
     profiles:
       - once
+  ########################################
+  # kroki
+  ########################################
+  kroki:
+    image: yuzutech/kroki
+    depends_on:
+      - kroki-blockdiag
+      - kroki-mermaid
+      - kroki-bpmn
+      - kroki-excalidraw
+    environment:
+      - KROKI_BLOCKDIAG_HOST=kroki-blockdiag
+      - KROKI_MERMAID_HOST=kroki-mermaid
+      - KROKI_BPMN_HOST=kroki-bpmn
+      - KROKI_EXCALIDRAW_HOST=kroki-excalidraw
+    expose:
+      - "8000"
+  kroki-blockdiag:
+    image: yuzutech/kroki-blockdiag
+    expose:
+      - "8001"
+  kroki-mermaid:
+    image: yuzutech/kroki-mermaid
+    expose:
+      - "8002"
+  kroki-bpmn:
+    image: yuzutech/kroki-bpmn
+    expose:
+      - "8003"
+  kroki-excalidraw:
+    image: yuzutech/kroki-excalidraw
+    expose:
+      - "8004"
 
 volumes:
   gitlab-data:
