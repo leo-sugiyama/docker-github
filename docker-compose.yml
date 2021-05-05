@@ -17,6 +17,11 @@ services:
             proxy_cache off;
             proxy_pass  http://kroki:8000/;
           }
+
+          location /excalidraw/ {
+            proxy_cache off;
+            proxy_pass  http://excalidraw:80/;
+          }
         "
         gitlab_rails['gitlab_shell_ssh_port'] = 10022
         gitlab_rails['time_zone']             = 'Asia/Tokyo'
@@ -31,6 +36,7 @@ services:
     depends_on:
       - certs
       - kroki
+      - excalidraw
     extra_hosts:
       # GitLab の kroki 連携の為に必要
       # GitLab が http://gitlab.example.com/kroki/ でアクセスしたときに名前解決できないと連携できない
@@ -86,6 +92,13 @@ services:
     image: yuzutech/kroki-excalidraw
     expose:
       - "8004"
+  ########################################
+  # Excalidraw
+  ########################################
+  excalidraw:
+    image: 'excalidraw/excalidraw:latest'
+    expose:
+      - "80"
 
 volumes:
   gitlab-data:
