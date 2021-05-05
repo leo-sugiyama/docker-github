@@ -9,7 +9,7 @@ services:
     restart: always
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url                          'https://gitlab.example.com:10443'
+        external_url                          'https://gitlab.example.com:10443/gitlab/'
         nginx['ssl_certificate']              = '/certs/cert.pem'
         nginx['ssl_certificate_key']          = '/certs/key.pem'
         gitlab_rails['gitlab_shell_ssh_port'] = 10022
